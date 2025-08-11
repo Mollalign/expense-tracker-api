@@ -75,13 +75,20 @@ WSGI_APPLICATION = 'expense_tracker.wsgi.application'
 
 # Database
 # https://docs.djangoproject.com/en/5.2/ref/settings/#databases
+import dj_database_url
+from dotenv import load_dotenv
+import os
+
+load_dotenv()  # this loads the variables from .env into os.environ
 
 DATABASES = {
-    'default': {
-        'ENGINE': 'django.db.backends.sqlite3',
-        'NAME': BASE_DIR / 'db.sqlite3',
-    }
+    'default': dj_database_url.parse(
+        os.environ.get("DATABASE_URL"),
+        conn_max_age=600,   # keep connection open for 10 mins (optional but recommended)
+        ssl_require=True    # enforce SSL (Neon needs it)
+    )
 }
+
 
 
 # Password validation
@@ -131,3 +138,12 @@ SIMPLE_JWT = {
     'ACCESS_TOKEN_LIFETIME': timedelta(minutes=60),
     'REFRESH_TOKEN_LIFETIME': timedelta(days=1),
 }
+
+
+
+EMAIL_BACKEND = 'django.core.mail.backends.console.EmailBackend'  # Dev only
+EMAIL_HOST = 'smtp.gmail.com'
+EMAIL_PORT = 587
+EMAIL_USE_TLS = True
+EMAIL_HOST_USER = 'molledan69@gmail.com'
+EMAIL_HOST_PASSWORD = os.environ.get("EMAIL_HOST_PASSWORD")
