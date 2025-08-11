@@ -1,5 +1,5 @@
 from ninja import Schema
-from typing import Optional
+from typing import Optional, List
 import datetime
 
 # CATEGORY SCHEMAS
@@ -25,3 +25,16 @@ class ExpenseOut(Schema):
     amount: float
     description: Optional[str]
     date: datetime.date  
+
+
+class CategoryReport(Schema):
+    category_id: int
+    category_name: str
+    total_spent: float
+    budget: Optional[float]
+    over_budget: bool
+
+class MonthlyReportOut(Schema):
+    month: str
+    total_spent: float
+    categories: List[CategoryReport]    
