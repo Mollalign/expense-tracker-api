@@ -7,12 +7,10 @@ class CategoryIn(Schema):
     name: str
     budget: Optional[float] = None
 
-
 class CategoryOut(Schema):
     id: int
     name: str
     budget: Optional[float]   
-
 
 # EXPENSE SCHEMAS
 class ExpenseIn(Schema):
@@ -20,7 +18,6 @@ class ExpenseIn(Schema):
     amount: float
     description: Optional[str] = None
     date: Optional[datetime.date] = None
-
 
 class ExpenseOut(Schema):
     id: int

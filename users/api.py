@@ -18,7 +18,7 @@ from django.utils import timezone
 from datetime import timedelta
 
 
-router = Router()
+router = Router(tags=["User Auth"])
 
 
 # register route
