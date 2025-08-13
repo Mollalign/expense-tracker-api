@@ -75,7 +75,7 @@ def forgot_password(request, data: ForgotPasswordSchema):
     send_mail(
         'Your Password Reset Code',
         f'Your code is {code}',
-        'noreply@example.com',
+        'molledan69@gmail.com',
         [data.email],
         fail_silently=False
     )
