@@ -16,6 +16,7 @@ from django.core.mail import send_mail
 from .models import PasswordResetCode
 from django.utils import timezone
 from datetime import timedelta
+from django.contrib.auth import logout
 
 
 router = Router(tags=["User Auth"])
@@ -52,6 +53,11 @@ def login(request, data: UserLoginSchema):
         "refresh": str(refresh)
     }
 
+
+@router.post("/logout")
+def user_logout(request):
+    logout(request)
+    return {"message": "Logged out successfully"}
 
 
 # Forgot Password route
