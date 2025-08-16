@@ -1,6 +1,14 @@
 from ninja import Router
-from django.contrib.auth.models import User
+from django.contrib.auth import get_user_model
 from django.contrib.auth.hashers import make_password
+from django.core.mail import send_mail
+from django.utils import timezone
+from datetime import timedelta
+from ninja.errors import HttpError
+from rest_framework_simplejwt.tokens import RefreshToken
+from django.contrib.auth import authenticate
+import random
+
 from .schema import (
     UserRegisterSchema, 
     UserLoginSchema, 
@@ -8,30 +16,22 @@ from .schema import (
     ForgotPasswordSchema,
     VerifyCodeSchema
 )
-from ninja.errors import HttpError
-from django.contrib.auth import authenticate
-from rest_framework_simplejwt.tokens import RefreshToken
-import random
-from django.core.mail import send_mail
 from .models import PasswordResetCode
-from django.utils import timezone
-from datetime import timedelta
-from django.contrib.auth import logout
 
-
+User = get_user_model()
 router = Router(tags=["User Auth"])
 
-
-# register route
+# ------------------------
+# Register
+# ------------------------
 @router.post("/register")
 def register(request, data: UserRegisterSchema):
-    if User.objects.filter(username=data.username).exists():
-        raise HttpError(400, "Username already taken")
     if User.objects.filter(email=data.email).exists():
         raise HttpError(400, "Email already taken")
-    
+
+    # Create user
     user = User.objects.create(
-        username=data.username,
+        full_name=data.full_name,  
         email=data.email,
         password=make_password(data.password)
     )
@@ -39,14 +39,19 @@ def register(request, data: UserRegisterSchema):
     return {"message": "User registered successfully"}
 
 
-# Login route
+# ------------------------
+# Login
+# ------------------------
 @router.post("/login", response=TokenSchema)
 def login(request, data: UserLoginSchema):
-    user = authenticate(username=data.username, password=data.password)
+    user = authenticate(username=data.email, password=data.password)
     if not user:
         raise HttpError(401, "Invalid credentials")
-    
+
     refresh = RefreshToken.for_user(user)
+    # Add extra claims so React can decode
+    refresh["sub"] = user.id
+    refresh["email"] = user.email
 
     return {
         "access": str(refresh.access_token),
@@ -54,13 +59,9 @@ def login(request, data: UserLoginSchema):
     }
 
 
-@router.post("/logout")
-def user_logout(request):
-    logout(request)
-    return {"message": "Logged out successfully"}
-
-
-# Forgot Password route
+# ------------------------
+# Forgot Password
+# ------------------------
 @router.post("/forgot-password")
 def forgot_password(request, data: ForgotPasswordSchema):
     try:
@@ -68,14 +69,13 @@ def forgot_password(request, data: ForgotPasswordSchema):
     except User.DoesNotExist:
         raise HttpError(404, "User with this email does not exist")
 
-
-    code = str(random.randint(100000, 999999))  
+    code = str(random.randint(100000, 999999))
     PasswordResetCode.objects.create(user=user, code=code)
 
     send_mail(
         'Your Password Reset Code',
         f'Your code is {code}',
-        'molledan69@gmail.com',
+        'no-reply@example.com',
         [data.email],
         fail_silently=False
     )
@@ -83,39 +83,30 @@ def forgot_password(request, data: ForgotPasswordSchema):
     return {"message": "Password reset code sent to your email"}
 
 
-# verify-code route
+# ------------------------
+# Verify Code & Reset Password
+# ------------------------
 @router.post("/verify-code")
 def verify_code(request, data: VerifyCodeSchema):
     try:
         user = User.objects.get(email=data.email)
     except User.DoesNotExist:
         raise HttpError(404, "User with this email does not exist")
-    
 
     try:
         reset_code = PasswordResetCode.objects.filter(user=user).latest('created_at')
-    except User.DoesNotExist:
+    except PasswordResetCode.DoesNotExist:
         raise HttpError(404, "No reset code found")
-    
-    # Check expiry - 15 minutes ago from now
+
     expiry_time = timezone.now() - timedelta(minutes=15)
     if reset_code.created_at < expiry_time:
         raise HttpError(400, "Reset code expired")
-    
+
     if reset_code.code != data.code:
         raise HttpError(400, "Invalid code")
-    
+
     user.password = make_password(data.new_password)
     user.save()
-
     reset_code.delete()
-    
+
     return {"message": "Password updated successfully"}
-
-
-
-
-
-
-    
-

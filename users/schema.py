@@ -1,12 +1,12 @@
 from ninja import Schema
 
 class UserRegisterSchema(Schema):
-    username: str
+    full_name: str
     email: str
     password: str
 
 class UserLoginSchema(Schema):
-    username: str
+    email: str
     password: str  
 
 class TokenSchema(Schema):
