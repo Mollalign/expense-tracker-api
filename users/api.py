@@ -8,6 +8,8 @@ from ninja.errors import HttpError
 from rest_framework_simplejwt.tokens import RefreshToken
 from django.contrib.auth import authenticate
 import random
+from rest_framework_simplejwt.exceptions import TokenError, InvalidToken
+from django.http import JsonResponse
 
 from .schema import (
     UserRegisterSchema, 
@@ -57,6 +59,22 @@ def login(request, data: UserLoginSchema):
         "access": str(refresh.access_token),
         "refresh": str(refresh)
     }
+
+
+# ------------------------
+# Refresh Token
+# ------------------------
+@router.post("/refresh")
+def refresh_token(request, data: dict):
+    try:
+        refresh = RefreshToken(data["refresh"])
+        access = refresh.access_token
+        return JsonResponse({
+            "access": str(access)
+        })
+    except (TokenError, InvalidToken):
+        return JsonResponse({"detail": "Invalid or expired refresh token"}, status=401)
+
 
 
 # ------------------------
