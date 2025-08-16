@@ -33,7 +33,7 @@ def register(request, data: UserRegisterSchema):
 
     # Create user
     user = User.objects.create(
-        full_name=data.full_name,  
+        username=data.full_name,  
         email=data.email,
         password=make_password(data.password)
     )
@@ -46,7 +46,7 @@ def register(request, data: UserRegisterSchema):
 # ------------------------
 @router.post("/login", response=TokenSchema)
 def login(request, data: UserLoginSchema):
-    user = authenticate(username=data.email, password=data.password)
+    user = authenticate(email=data.email, password=data.password)
     if not user:
         raise HttpError(401, "Invalid credentials")
 
